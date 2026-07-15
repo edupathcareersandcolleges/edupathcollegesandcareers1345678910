@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPath — Browse All {{ 'Colleges' if kind == 'colleges' else 'Careers' }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="results-page">
+    <div class="hero-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-inner">
+            <div class="logo">
+                <span class="logo-icon">🎓</span>
+                <span class="logo-text">EduPath</span>
+            </div>
+            <div class="nav-right">
+                {% if client_name %}
+                <span class="nav-user">👋 {{ client_name }}</span>
+                {% endif %}
+                <a href="/" class="back-btn">← Home</a>
+                <a href="/logout" class="logout-btn">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="results-container">
+
+        <!-- Page header -->
+        <div class="browse-header">
+            <div class="browse-title-row">
+                <h1 class="browse-title">
+                    {% if kind == 'colleges' %}🏛️ All Institutions{% else %}💼 All Careers{% endif %}
+                </h1>
+                <div class="browse-counts">
+                    <span class="browse-count-pill">{{ items|length }} shown</span>
+                </div>
+            </div>
+            <p class="browse-subtitle">
+                Browse and click any card to see full details.
+            </p>
+        </div>
+
+        <!-- Filter bar -->
+        <form class="browse-filters" method="get" action="/browse" id="filterForm">
+            <!-- Kind toggle -->
+            <div class="browse-kind-toggle">
+                <button type="submit" name="kind" value="colleges"
+                        class="kind-btn {% if kind == 'colleges' %}active{% endif %}"
+                        onclick="this.form.querySelector('[name=kind]') && (this.form.querySelector('[name=kind]').value=this.value)">
+                    🏛️ Colleges
+                    <span class="kind-count">{{ total_colleges }}</span>
+                </button>
+                <button type="submit" name="kind" value="careers"
+                        class="kind-btn {% if kind == 'careers' %}active{% endif %}">
+                    💼 Careers
+                    <span class="kind-count">{{ total_careers }}</span>
+                </button>
+            </div>
+
+            <!-- Region filter -->
+            <div class="browse-region-group">
+                <a href="/browse?kind={{ kind }}&region=all{% if q %}&q={{ q }}{% endif %}"
+                   class="region-pill {% if region == 'all' %}active{% endif %}">All</a>
+                <a href="/browse?kind={{ kind }}&region=India{% if q %}&q={{ q }}{% endif %}"
+                   class="region-pill {% if region == 'India' %}active{% endif %}">🇮🇳 India</a>
+                <a href="/browse?kind={{ kind }}&region=Global{% if q %}&q={{ q }}{% endif %}"
+                   class="region-pill {% if region == 'Global' %}active{% endif %}">🌐 Global</a>
+            </div>
+
+            <!-- Search box -->
+            <div class="browse-search-wrap">
+                <span class="browse-search-icon">🔍</span>
+                <input type="text" name="q" value="{{ q }}"
+                       class="browse-search-input"
+                       placeholder="{% if kind == 'colleges' %}Search by name, city, country…{% else %}Search by role, salary, duties…{% endif %}"
+                       autocomplete="off">
+                <input type="hidden" name="kind" value="{{ kind }}">
+                <input type="hidden" name="region" value="{{ region }}">
+                <button type="submit" class="browse-search-btn">Search</button>
+                {% if q %}
+                <a href="/browse?kind={{ kind }}&region={{ region }}" class="browse-clear-btn">✕</a>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- Results -->
+        {% if items %}
+            {% if kind == 'colleges' %}
+            <div class="colleges-grid browse-grid" id="browseGrid">
+                {% for college in items %}
+                {% set isIndia = college.region == 'India' %}
+                <div class="college-card clickable-card {% if not isIndia %}abroad-card{% endif %}"
+                     data-name="{{ college.name }}"
+                     data-rank="{{ college.rank }}"
+                     data-fees="{{ college.fees }}"
+                     data-features="{{ college.features }}"
+                     data-location="{{ college.location or ('' if isIndia else 'Global') }}"
+                     data-region="{{ 'India' if isIndia else 'Global' }}"
+                     data-exams="{{ college.exams or '' }}"
+                     onclick="openDetailModal(this,'college')">
+                    <div class="college-card-top">
+                        <div class="college-rank-badge {% if not isIndia %}abroad{% endif %}">{{ college.rank }}</div>
+                        <div class="college-region {% if isIndia %}india{% else %}abroad{% endif %}">
+                            {{ college.location or ('India' if isIndia else 'Global') }}
+                        </div>
+                    </div>
+                    <h3 class="college-name">{{ college.name }}</h3>
+                    <div class="college-meta">
+                        <div class="college-fee"><span class="meta-icon">💰</span>{{ college.fees }}</div>
+                    </div>
+                    <p class="college-features">{{ college.features }}</p>
+                    <div class="card-tap-hint">Tap for full details →</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <div class="careers-grid browse-grid" id="browseGrid">
+                {% for career in items %}
+                {% set outlook_class = career.outlook | lower %}
+                {% set isIndia = career.region == 'India' %}
+                <div class="career-card clickable-card {% if not isIndia %}abroad-career{% endif %}"
+                     data-title="{{ career.title }}"
+                     data-salary="{{ career.salary }}"
+                     data-outlook="{{ career.outlook }}"
+                     data-duties="{{ career.duties }}"
+                     data-region-type="{{ 'India' if isIndia else 'Global' }}"
+                     onclick="openDetailModal(this,'career')">
+                    <div class="career-header">
+                        <div class="career-number">{{ '%02d' % loop.index }}</div>
+                        <div class="outlook-badge {{ outlook_class }}">{{ career.outlook }}</div>
+                    </div>
+                    <h3 class="career-title">{{ career.title }}</h3>
+                    <div class="career-salary"><span class="salary-icon">💵</span>{{ career.salary }}</div>
+                    <p class="career-duties">{{ career.duties }}</p>
+                    <div class="card-tap-hint">Tap for full details →</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        {% else %}
+        <div class="browse-empty">
+            <div class="browse-empty-icon">🔍</div>
+            <h3>No results found</h3>
+            <p>Try a different search term or clear the filter.</p>
+            <a href="/browse?kind={{ kind }}&region=all" class="cta-btn" style="display:inline-flex;margin-top:16px">
+                <span class="btn-text">Clear filters</span>
+                <span class="btn-icon">→</span>
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="detail-overlay" id="detailOverlay" onclick="closeDetailModal(event)">
+        <div class="detail-modal" id="detailModal">
+            <button class="detail-close-btn" onclick="closeDetailModal()">✕</button>
+            <div class="detail-body" id="detailBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const detailOverlay = document.getElementById('detailOverlay');
+        const detailBody    = document.getElementById('detailBody');
+
+        function openDetailModal(el, type) {
+            if (type === 'college') {
+                const name     = el.dataset.name     || '';
+                const rank     = el.dataset.rank     || '';
+                const fees     = el.dataset.fees     || '';
+                const features = el.dataset.features || '';
+                const location = el.dataset.location || '';
+                const region   = el.dataset.region   || '';
+                const exams    = el.dataset.exams    || '';
+                const isIndia  = region === 'India';
+
+                const examBadges = exams
+                    ? exams.split(',').map(e => e.trim()).filter(Boolean)
+                        .map(e => `<span class="exam-badge">${e}</span>`).join('')
+                    : '<span class="exam-badge exam-badge-none">Not specified</span>';
+
+                const featureBullets = features.split(/[,;]/).map(f => f.trim()).filter(Boolean)
+                    .map(f => `<li class="detail-feature-item">${f}</li>`).join('');
+
+                detailBody.innerHTML = `
+                    <div class="detail-type-badge ${isIndia ? 'india' : 'global'}">
+                        ${isIndia ? '🇮🇳 Indian Institution' : '🌐 International Institution'}
+                    </div>
+                    <h2 class="detail-title">${name}</h2>
+                    <div class="detail-location">📍 ${location}</div>
+                    <div class="detail-stats-row">
+                        <div class="detail-stat">
+                            <div class="detail-stat-label">Ranking / Tier</div>
+                            <div class="detail-stat-value rank">${rank}</div>
+                        </div>
+                        <div class="detail-stat">
+                            <div class="detail-stat-label">Estimated Fees</div>
+                            <div class="detail-stat-value fee">💰 ${fees}</div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-section-title">📝 Entrance Exams to Crack</div>
+                        <div class="exam-badges-wrap">${examBadges}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-section-title">✨ Key Highlights</div>
+                        <ul class="detail-feature-list">${featureBullets}</ul>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-section-title">🎯 What to Expect</div>
+                        <p class="detail-expect-text">
+                            ${isIndia
+                                ? 'Strong academic reputation within India. Ideal for students seeking quality education close to home with industry connections and placement support.'
+                                : 'World-class global exposure with diverse student community and international career opportunities. Often requires strong academic profile and language proficiency.'}
+                        </p>
+                    </div>
+                `;
+            } else {
+                const title    = el.dataset.title    || '';
+                const salary   = el.dataset.salary   || '';
+                const outlook  = el.dataset.outlook  || '';
+                const duties   = el.dataset.duties   || '';
+                const region   = el.dataset.regionType || '';
+                const isGlobal = region === 'Global';
+                const outlookClass = outlook.toLowerCase();
+                const outlookIcons = { 'excellent': '🚀', 'high': '📈', 'good': '✅', 'moderate': '⚖️', 'steady': '📊' };
+                const outlookIcon  = outlookIcons[outlookClass] || '💼';
+
+                const dutyBullets = duties.split(/[.;]/).map(d => d.trim()).filter(d => d.length > 4)
+                    .map(d => `<li class="detail-feature-item">${d}.</li>`).join('');
+
+                detailBody.innerHTML = `
+                    <div class="detail-type-badge ${isGlobal ? 'global' : 'india'}">
+                        ${isGlobal ? '🌍 International Career' : '🇮🇳 Career in India'}
+                    </div>
+                    <h2 class="detail-title">${title}</h2>
+                    <div class="detail-stats-row">
+                        <div class="detail-stat">
+                            <div class="detail-stat-label">Salary Range</div>
+                            <div class="detail-stat-value fee">💵 ${salary}</div>
+                        </div>
+                        <div class="detail-stat">
+                            <div class="detail-stat-label">Job Outlook</div>
+                            <div class="detail-stat-value">
+                                <span class="outlook-badge ${outlookClass}" style="font-size:13px;padding:4px 12px">
+                                    ${outlookIcon} ${outlook}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-section-title">📋 Roles &amp; Responsibilities</div>
+                        <ul class="detail-feature-list">${dutyBullets}</ul>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-section-title">💡 Career Insight</div>
+                        <p class="detail-expect-text">
+                            ${isGlobal
+                                ? 'This role is in strong demand globally. Consider building international certifications, language skills, and a portfolio of global projects to stand out.'
+                                : 'This role offers excellent opportunities in India\'s growing economy. Focus on relevant certifications, internships, and networking to fast-track your career.'}
+                        </p>
+                    </div>
+                `;
+            }
+            detailOverlay.classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        function closeDetailModal(e) {
+            if (e && e.target !== detailOverlay) return;
+            detailOverlay.classList.remove('active');
+            document.body.classList.remove('modal-open');
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                detailOverlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            }
+        });
+
+        // Animate cards in
+        document.querySelectorAll('.college-card, .career-card').forEach((card, i) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(16px)';
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 40 + i * 25);
+        });
+
+        // Submit form on Enter in search input
+        document.querySelector('.browse-search-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.target.closest('form').submit(); }
+        });
+    </script>
+</body>
+</html>

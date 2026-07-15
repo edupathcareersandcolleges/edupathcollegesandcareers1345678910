@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your EduPath Report — {{ stream }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body class="results-page">
+    <div class="hero-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-inner">
+            <div class="logo">
+                <span class="logo-icon">🎓</span>
+                <span class="logo-text">EduPath</span>
+            </div>
+            <div class="nav-right">
+                {% if client_name %}
+                <span class="nav-user">👋 {{ client_name }}</span>
+                {% endif %}
+                <a href="/browse" class="browse-nav-link">🏛️ Browse All</a>
+                <button onclick="downloadReport()" class="download-report-btn">📥 Download Report</button>
+                <a href="/" class="back-btn">← New Search</a>
+                <a href="/logout" class="logout-btn">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="print-header" style="display:none">
+        <div class="print-header-logo">🎓 EduPath</div>
+        <div class="print-header-meta">
+            <strong id="printName"></strong><br>
+            <span id="printEmail"></span><br>
+            Generated: <span id="printDate"></span>
+        </div>
+    </div>
+
+    <div class="results-container">
+
+        <div class="results-hero">
+            <div class="results-badge">{{ stream_icon }} Your Personalised Report</div>
+            <h1 class="results-title">{{ level }} · {{ stream }}</h1>
+
+            <div class="course-info-card">
+                {% if level == "College Student" %}
+                <div class="course-info-row">
+                    <div class="course-info-item">
+                        <div class="ci-label">🎓 Selected Course</div>
+                        <div class="ci-value">{{ course_name }}</div>
+                    </div>
+                    {% if specialization %}
+                    <div class="course-info-divider"></div>
+                    <div class="course-info-item">
+                        <div class="ci-label">🔬 Specialization</div>
+                        <div class="ci-value" style="color:var(--secondary)">{{ specialization }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="course-info-row">
+                    <div class="course-info-item">
+                        <div class="ci-label">📚 Your Selected Subjects</div>
+                        <div class="ci-value subjects-list">
+                            {% if subjects %}
+                                {% for subject in subjects %}
+                                    <span class="subject-tag">{{ subject }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color:var(--text-muted);font-size:13px">No subjects selected</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if course_name %}
+                    <div class="course-info-divider"></div>
+                    <div class="course-info-item">
+                        <div class="ci-label">🎯 Course Goal After School</div>
+                        <div class="ci-value" style="color:var(--secondary)">{{ course_name }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if level == "College Student" %}
+        <!-- ── COLLEGE: Career paths split India vs Abroad ── -->
+        <div class="career-regions-wrap">
+
+            <div class="section-group">
+                <div class="section-group-header">
+                    <span class="flag-icon">🇮🇳</span>
+                    <h2>Careers in India</h2>
+                    <span class="count-badge">{{ india_careers|length }} Roles</span>
+                </div>
+                <div class="careers-grid">
+                    {% for career in india_careers %}
+                    {% set outlook_class = career.outlook | lower %}
+                    <div class="career-card clickable-card" data-career-idx="{{ loop.index0 }}"
+                         data-title="{{ career.title }}"
+                         data-salary="{{ career.salary }}"
+                         data-outlook="{{ career.outlook }}"
+                         data-duties="{{ career.duties }}"
+                         data-region-type="India"
+                         onclick="openDetailModal(this,'career')"
+                         style="animation-delay: {{ loop.index0 * 0.05 }}s">
+                        <div class="career-header">
+                            <div class="career-number">{{ "%02d" % loop.index }}</div>
+                            <div class="outlook-badge {{ outlook_class }}">{{ career.outlook }}</div>
+                        </div>
+                        <h3 class="career-title">{{ career.title }}</h3>
+                        <div class="career-salary"><span class="salary-icon">💵</span>{{ career.salary }}</div>
+                        <p class="career-duties">{{ career.duties }}</p>
+                        <div class="card-tap-hint">Tap for full details →</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="section-group" style="margin-top:36px">
+                <div class="section-group-header">
+                    <span class="flag-icon">🌍</span>
+                    <h2>International Careers</h2>
+                    <span class="count-badge">{{ abroad_careers|length }} Roles</span>
+                </div>
+                <div class="careers-grid">
+                    {% for career in abroad_careers %}
+                    {% set outlook_class = career.outlook | lower %}
+                    <div class="career-card abroad-career clickable-card" data-career-idx="{{ loop.index0 }}"
+                         data-title="{{ career.title }}"
+                         data-salary="{{ career.salary }}"
+                         data-outlook="{{ career.outlook }}"
+                         data-duties="{{ career.duties }}"
+                         data-region-type="Global"
+                         onclick="openDetailModal(this,'career')"
+                         style="animation-delay: {{ loop.index0 * 0.05 }}s">
+                        <div class="career-header">
+                            <div class="career-number">{{ "%02d" % loop.index }}</div>
+                            <div class="outlook-badge {{ outlook_class }}">{{ career.outlook }}</div>
+                        </div>
+                        <h3 class="career-title">{{ career.title }}</h3>
+                        <div class="career-salary"><span class="salary-icon">💵</span>{{ career.salary }}</div>
+                        <p class="career-duties">{{ career.duties }}</p>
+                        <div class="card-tap-hint">Tap for full details →</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── COLLEGE: Prep Tips section ── -->
+        <div class="prep-tips-section">
+            <div class="section-group-header" style="margin-bottom:24px">
+                <span class="flag-icon">🧠</span>
+                <h2>Preparation Tips</h2>
+                <span class="count-badge">{{ prep_tips|length }} Categories</span>
+            </div>
+            <div class="prep-tips-grid">
+                {% for tip_group in prep_tips %}
+                <div class="prep-tip-card ptc-{{ tip_group.color }}">
+                    <div class="ptc-header">
+                        <span class="ptc-icon">{{ tip_group.icon }}</span>
+                        <span class="ptc-category">{{ tip_group.category }}</span>
+                    </div>
+                    <ul class="ptc-list">
+                        {% for tip in tip_group.tips %}
+                        <li class="ptc-item">{{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% else %}
+        <!-- ── SCHOOL: Colleges + Career Paths + Prep Tips tabs ── -->
+        <div class="section-tabs">
+            <button class="tab-btn active" onclick="showTab('colleges', this)">
+                🏛️ Top Colleges <span class="tab-count">{{ india_colleges|length + abroad_colleges|length }}</span>
+            </button>
+            <button class="tab-btn" onclick="showTab('careers', this)">
+                💼 Career Paths <span class="tab-count">{{ careers|length }}</span>
+            </button>
+            <button class="tab-btn" onclick="showTab('prep', this)">
+                🧠 Prep Tips <span class="tab-count">{{ prep_tips|length }}</span>
+            </button>
+        </div>
+
+        <div id="tab-colleges" class="tab-content active">
+            <div class="college-search-wrap">
+                <div class="college-search-box">
+                    <span class="college-search-icon">🔍</span>
+                    <input
+                        type="text"
+                        id="collegeSearchInput"
+                        class="college-search-input"
+                        placeholder="Search by region or location (e.g. Delhi, London, Canada…)"
+                        autocomplete="off"
+                        oninput="filterColleges(this.value)"
+                    >
+                    <button class="college-search-clear" id="searchClearBtn" onclick="clearSearch()" style="display:none">✕</button>
+                </div>
+                <div class="college-search-results-label" id="searchResultsLabel" style="display:none"></div>
+            </div>
+
+            <div class="compare-hint" id="compareHint">
+                <span class="compare-hint-icon">⚖️</span>
+                Click <strong>Compare</strong> on any college card to add it to your comparison (up to 3)
+            </div>
+            <div class="colleges-section">
+                <div class="section-group">
+                    <div class="section-group-header">
+                        <span class="flag-icon">🇮🇳</span>
+                        <h2>Top Indian Institutions</h2>
+                        <span class="count-badge">{{ india_colleges|length }} Colleges</span>
+                    </div>
+                    <div class="colleges-grid">
+                        {% for college in india_colleges %}
+                        <div class="college-card clickable-card"
+                             data-id="{{ college.id }}"
+                             data-name="{{ college.name }}"
+                             data-rank="{{ college.rank }}"
+                             data-fees="{{ college.fees }}"
+                             data-features="{{ college.features }}"
+                             data-location="{{ college.location or 'India' }}"
+                             data-region="India"
+                             data-exams="{{ college.exams or '' }}"
+                             onclick="openDetailModal(this,'college')">
+                            <div class="college-card-top">
+                                <div class="college-rank-badge">{{ college.rank }}</div>
+                                <div class="college-region india">India</div>
+                            </div>
+                            <h3 class="college-name">{{ college.name }}</h3>
+                            <div class="college-meta">
+                                <div class="college-fee">
+                                    <span class="meta-icon">💰</span>
+                                    {{ college.fees }}
+                                </div>
+                            </div>
+                            <p class="college-features">{{ college.features }}</p>
+                            <div class="card-tap-hint">Tap for full details →</div>
+                            <button class="compare-add-btn" onclick="event.stopPropagation();toggleCompare(this)">
+                                <span class="compare-btn-icon">＋</span> Compare
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="section-group">
+                    <div class="section-group-header">
+                        <span class="flag-icon">🌐</span>
+                        <h2>Top International Institutions</h2>
+                        <span class="count-badge">{{ abroad_colleges|length }} Colleges</span>
+                    </div>
+                    <div class="colleges-grid">
+                        {% for college in abroad_colleges %}
+                        <div class="college-card abroad-card clickable-card"
+                             data-id="{{ college.id }}"
+                             data-name="{{ college.name }}"
+                             data-rank="{{ college.rank }}"
+                             data-fees="{{ college.fees }}"
+                             data-features="{{ college.features }}"
+                             data-location="{{ college.location or 'Global' }}"
+                             data-region="Global"
+                             data-exams="{{ college.exams or '' }}"
+                             onclick="openDetailModal(this,'college')">
+                            <div class="college-card-top">
+                                <div class="college-rank-badge abroad">{{ college.rank }}</div>
+                                <div class="college-region abroad">Global</div>
+                            </div>
+                            <h3 class="college-name">{{ college.name }}</h3>
+                            <div class="college-meta">
+                                <div class="college-fee">
+                                    <span class="meta-icon">💰</span>
+                                    {{ college.fees }}
+                                </div>
+                            </div>
+                            <p class="college-features">{{ college.features }}</p>
+                            <div class="card-tap-hint">Tap for full details →</div>
+                            <button class="compare-add-btn" onclick="event.stopPropagation();toggleCompare(this)">
+                                <span class="compare-btn-icon">＋</span> Compare
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-prep" class="tab-content">
+            <div class="prep-tips-section">
+                <div class="prep-tips-grid">
+                    {% for tip_group in prep_tips %}
+                    <div class="prep-tip-card ptc-{{ tip_group.color }}">
+                        <div class="ptc-header">
+                            <span class="ptc-icon">{{ tip_group.icon }}</span>
+                            <span class="ptc-category">{{ tip_group.category }}</span>
+                        </div>
+                        <ul class="ptc-list">
+                            {% for tip in tip_group.tips %}
+                            <li class="ptc-item">{{ tip }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-careers" class="tab-content">
+            <div class="chart-panel">
+                <div class="chart-panel-header">
+                    <div class="chart-title-group">
+                        <h3 class="chart-title">💵 Earning Potential by Career</h3>
+                        <p class="chart-subtitle">Salary range overview — hover a bar for details</p>
+                    </div>
+                    <div class="chart-legend">
+                        <span class="legend-dot" style="background:#6c63ff"></span><span>Min</span>
+                        <span class="legend-dot" style="background:#a78bfa;margin-left:14px"></span><span>Max</span>
+                    </div>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="salaryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="careers-grid" id="careersGrid">
+                {% for career in careers %}
+                {% set outlook_class = career.outlook | lower %}
+                <div class="career-card clickable-card"
+                     data-career-idx="{{ loop.index0 }}"
+                     data-title="{{ career.title }}"
+                     data-salary="{{ career.salary }}"
+                     data-outlook="{{ career.outlook }}"
+                     data-duties="{{ career.duties }}"
+                     data-region-type="India"
+                     onclick="openDetailModal(this,'career')"
+                     style="animation-delay: {{ loop.index0 * 0.04 }}s">
+                    <div class="career-header">
+                        <div class="career-number">{{ "%02d" % loop.index }}</div>
+                        <div class="outlook-badge {{ outlook_class }}">{{ career.outlook }}</div>
+                    </div>
+                    <h3 class="career-title">{{ career.title }}</h3>
+                    <div class="career-salary">
+                        <span class="salary-icon">💵</span>
+                        {{ career.salary }}
+                    </div>
+                    <p class="career-duties">{{ career.duties }}</p>
+                    <div class="card-tap-hint">Tap for full details →</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="cta-footer">
+            <p>Want to explore a different path?</p>
+            <a href="/" class="cta-btn">
+                <span class="btn-text">Start a New Search</span>
+                <span class="btn-icon">→</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Compare Tray -->
+    <div class="compare-tray" id="compareTray">
+        <div class="compare-tray-inner">
+            <div class="compare-tray-slots" id="compareTraySlots">
+                <div class="tray-slot empty" id="slot0">
+                    <div class="slot-empty-label">Add college</div>
+                </div>
+                <div class="tray-slot empty" id="slot1">
+                    <div class="slot-empty-label">Add college</div>
+                </div>
+                <div class="tray-slot empty" id="slot2">
+                    <div class="slot-empty-label">Add college</div>
+                </div>
+            </div>
+            <div class="compare-tray-actions">
+                <button class="compare-now-btn" id="compareNowBtn" onclick="openCompareModal()" disabled>
+                    ⚖️ Compare Now
+                </button>
+                <button class="compare-clear-btn" onclick="clearAll()">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="detail-overlay" id="detailOverlay" onclick="closeDetailModal(event)">
+        <div class="detail-modal" id="detailModal">
+            <button class="detail-close-btn" onclick="closeDetailModal()">✕</button>
+            <div class="detail-body" id="detailBody"></div>
+        </div>
+    </div>
+
+    <!-- Compare Modal -->
+    <div class="compare-modal-overlay" id="compareModalOverlay" onclick="closeCompareModal(event)">
+        <div class="compare-modal" id="compareModal">
+            <div class="compare-modal-header">
+                <h2>⚖️ College Comparison</h2>
+                <button class="modal-close-btn" onclick="closeCompareModal()">✕</button>
+            </div>
+            <div class="compare-modal-body" id="compareModalBody">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let compareList = [];
+        const MAX = 3;
+
+        function showTab(name, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function toggleCompare(btn) {
+            const card = btn.closest('.college-card');
+            const id = card.dataset.id;
+            const alreadyIdx = compareList.findIndex(c => c.id === id);
+
+            if (alreadyIdx !== -1) {
+                compareList.splice(alreadyIdx, 1);
+                card.classList.remove('in-compare');
+                btn.innerHTML = '<span class="compare-btn-icon">＋</span> Compare';
+                btn.classList.remove('added');
+            } else {
+                if (compareList.length >= MAX) {
+                    shakeTray();
+                    return;
+                }
+                const data = {
+                    id,
+                    name: card.dataset.name,
+                    rank: card.dataset.rank,
+                    fees: card.dataset.fees,
+                    features: card.dataset.features,
+                    region: card.dataset.region
+                };
+                compareList.push(data);
+                card.classList.add('in-compare');
+                btn.innerHTML = '<span class="compare-btn-icon">✓</span> Added';
+                btn.classList.add('added');
+            }
+            updateTray();
+        }
+
+        function updateTray() {
+            const tray = document.getElementById('compareTray');
+            const btn = document.getElementById('compareNowBtn');
+            const hint = document.getElementById('compareHint');
+
+            for (let i = 0; i < 3; i++) {
+                const slot = document.getElementById('slot' + i);
+                if (compareList[i]) {
+                    const name = compareList[i].name;
+                    const short = name.length > 28 ? name.slice(0, 26) + '…' : name;
+                    slot.className = 'tray-slot filled';
+                    slot.innerHTML = `
+                        <div class="slot-name">${short}</div>
+                        <button class="slot-remove" onclick="removeFromTray('${compareList[i].id}')">✕</button>
+                    `;
+                } else {
+                    slot.className = 'tray-slot empty';
+                    slot.innerHTML = '<div class="slot-empty-label">Add college</div>';
+                }
+            }
+
+            if (compareList.length > 0) {
+                tray.classList.add('visible');
+                hint.style.display = 'none';
+            } else {
+                tray.classList.remove('visible');
+                hint.style.display = 'flex';
+            }
+
+            btn.disabled = compareList.length < 2;
+        }
+
+        function removeFromTray(id) {
+            const card = document.querySelector(`.college-card[data-id="${id}"]`);
+            if (card) {
+                card.classList.remove('in-compare');
+                const btn = card.querySelector('.compare-add-btn');
+                if (btn) {
+                    btn.innerHTML = '<span class="compare-btn-icon">＋</span> Compare';
+                    btn.classList.remove('added');
+                }
+            }
+            compareList = compareList.filter(c => c.id !== id);
+            updateTray();
+        }
+
+        function clearAll() {
+            [...compareList].forEach(c => removeFromTray(c.id));
+        }
+
+        function shakeTray() {
+            const tray = document.getElementById('compareTray');
+            tray.classList.add('shake');
+            setTimeout(() => tray.classList.remove('shake'), 500);
+        }
+
+        function openCompareModal() {
+            if (compareList.length < 2) return;
+            const overlay = document.getElementById('compareModalOverlay');
+            const body = document.getElementById('compareModalBody');
+
+            const rows = [
+                { label: '🏫 Institution', key: 'name' },
+                { label: '🌍 Region', key: 'region' },
+                { label: '🏆 Ranking', key: 'rank' },
+                { label: '💰 Annual Fees', key: 'fees' },
+                { label: '✨ Key Strengths', key: 'features' },
+            ];
+
+            let html = `<div class="compare-table" style="--cols: ${compareList.length}">`;
+
+            html += `<div class="compare-row compare-header-row">
+                <div class="compare-label-cell"></div>
+                ${compareList.map((c, i) => `
+                    <div class="compare-col-header" style="--col-idx:${i}">
+                        <div class="col-number">${i + 1}</div>
+                        <div class="col-name">${c.name}</div>
+                        <div class="col-region ${c.region === 'India' ? 'india' : 'abroad'}">${c.region}</div>
+                    </div>
+                `).join('')}
+            </div>`;
+
+            rows.forEach((row, ri) => {
+                html += `<div class="compare-row ${ri % 2 === 0 ? 'even' : 'odd'}">
+                    <div class="compare-label-cell">${row.label}</div>
+                    ${compareList.map(c => `<div class="compare-data-cell">${c[row.key]}</div>`).join('')}
+                </div>`;
+            });
+
+            html += '</div>';
+            body.innerHTML = html;
+            overlay.classList.add('open');
+            document.body.classList.add('modal-open');
+        }
+
+        function closeCompareModal(e) {
+            if (e && e.target !== document.getElementById('compareModalOverlay')) return;
+            document.getElementById('compareModalOverlay').classList.remove('open');
+            document.body.classList.remove('modal-open');
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.getElementById('compareModalOverlay').classList.remove('open');
+                document.body.classList.remove('modal-open');
+            }
+        });
+
+        // ── College Search (API-powered with autocomplete) ──────────
+        // Only initialise if the search bar exists (School Student tab only)
+        const searchInput  = document.getElementById('collegeSearchInput');
+        const clearBtn     = document.getElementById('searchClearBtn');
+        const resultsLabel = document.getElementById('searchResultsLabel');
+
+        let allLocations = [];
+        let searchDebounce = null;
+        let acSelected = -1;
+        let acBox = null;
+
+        if (searchInput) {
+        // Pre-load all locations for autocomplete
+        fetch('/api/colleges/locations').then(r => r.json()).then(locs => { allLocations = locs; });
+
+        // ── Autocomplete dropdown ──────────────────────────────────
+        acBox = document.createElement('div');
+        acBox.className = 'ac-dropdown';
+        acBox.style.display = 'none';
+        searchInput.closest('.college-search-box').after(acBox);
+
+        function showAutocomplete(q) {
+            if (!q || q.length < 1) { acBox.style.display = 'none'; acSelected = -1; return; }
+            const matches = allLocations.filter(l => l.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
+            if (matches.length === 0) { acBox.style.display = 'none'; return; }
+            acBox.innerHTML = matches.map((m, i) =>
+                `<div class="ac-item" data-idx="${i}" data-value="${m}">${highlight(m, q)}</div>`
+            ).join('');
+            acBox.style.display = 'block';
+            acSelected = -1;
+            acBox.querySelectorAll('.ac-item').forEach(item => {
+                item.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    selectAutocomplete(item.dataset.value);
+                });
+            });
+        }
+
+        function highlight(text, q) {
+            const idx = text.toLowerCase().indexOf(q.toLowerCase());
+            if (idx === -1) return text;
+            return text.slice(0, idx) + `<strong>${text.slice(idx, idx + q.length)}</strong>` + text.slice(idx + q.length);
+        }
+
+        function selectAutocomplete(val) {
+            searchInput.value = val;
+            acBox.style.display = 'none';
+            acSelected = -1;
+            doSearch(val);
+        }
+
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.trim();
+            showAutocomplete(q);
+            clearBtn.style.display = q ? 'flex' : 'none';
+            clearDebounce();
+            if (!q) { resetView(); return; }
+            searchDebounce = setTimeout(() => doSearch(q), 250);
+        });
+
+        searchInput.addEventListener('keydown', e => {
+            const items = acBox.querySelectorAll('.ac-item');
+            if (acBox.style.display === 'none' || items.length === 0) {
+                if (e.key === 'Enter') { clearDebounce(); doSearch(searchInput.value.trim()); }
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                acSelected = Math.min(acSelected + 1, items.length - 1);
+                updateAcHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                acSelected = Math.max(acSelected - 1, -1);
+                updateAcHighlight(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (acSelected >= 0) selectAutocomplete(items[acSelected].dataset.value);
+                else { acBox.style.display = 'none'; clearDebounce(); doSearch(searchInput.value.trim()); }
+            } else if (e.key === 'Escape') {
+                acBox.style.display = 'none';
+                acSelected = -1;
+            }
+        });
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.college-search-wrap')) {
+                acBox.style.display = 'none';
+                acSelected = -1;
+            }
+        });
+
+        function updateAcHighlight(items) {
+            items.forEach((item, i) => item.classList.toggle('ac-active', i === acSelected));
+            if (acSelected >= 0) searchInput.value = items[acSelected].dataset.value;
+        }
+
+        function clearDebounce() { clearTimeout(searchDebounce); }
+
+        // ── API search + render results ────────────────────────────
+        let searchResultSection = null;
+
+        function doSearch(q) {
+            if (!q || q.length < 2) { resetView(); return; }
+            fetch(`/api/colleges/search?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(colleges => renderSearchResults(q, colleges));
+        }
+
+        function renderSearchResults(q, colleges) {
+            // Remove old results section
+            if (searchResultSection) searchResultSection.remove();
+
+            resultsLabel.style.display = 'block';
+            if (colleges.length === 0) {
+                resultsLabel.innerHTML = `<span class="search-no-results">No colleges found for "<strong>${q}</strong>" — try Delhi, London, Toronto, Berlin…</span>`;
+                searchResultSection = null;
+                return;
+            }
+            resultsLabel.innerHTML = `<span class="search-count-msg">Top <strong>${colleges.length}</strong> college${colleges.length > 1 ? 's' : ''} matching "<strong>${q}</strong>"</span>`;
+
+            searchResultSection = document.createElement('div');
+            searchResultSection.className = 'search-results-section';
+
+            const grid = document.createElement('div');
+            grid.className = 'colleges-grid';
+
+            colleges.forEach(c => {
+                const isIndia = c.region === 'India';
+                const card = document.createElement('div');
+                card.className = 'college-card search-result-card clickable-card' + (isIndia ? '' : ' abroad-card');
+                card.dataset.name     = c.name;
+                card.dataset.rank     = c.rank;
+                card.dataset.fees     = c.fees;
+                card.dataset.features = c.features;
+                card.dataset.location = c.location || (isIndia ? 'India' : 'Global');
+                card.dataset.region   = isIndia ? 'India' : 'Global';
+                card.dataset.exams    = c.exams || '';
+                card.onclick = function(){ openDetailModal(this, 'college'); };
+                card.innerHTML = `
+                    <div class="college-card-top">
+                        <div class="college-rank-badge${isIndia ? '' : ' abroad'}">${c.rank}</div>
+                        <div class="college-region${isIndia ? ' india' : ' abroad'}">${c.location || (isIndia ? 'India' : 'Global')}</div>
+                    </div>
+                    <h3 class="college-name">${c.name}</h3>
+                    <div class="college-meta">
+                        <div class="college-fee"><span class="meta-icon">💰</span>${c.fees}</div>
+                    </div>
+                    <p class="college-features">${c.features}</p>
+                    <div class="card-tap-hint">Tap for full details →</div>
+                `;
+                grid.appendChild(card);
+            });
+
+            searchResultSection.appendChild(grid);
+            // Insert after the results label
+            resultsLabel.after(searchResultSection);
+        }
+
+        function resetView() {
+            resultsLabel.style.display = 'none';
+            clearBtn.style.display = 'none';
+            if (searchResultSection) { searchResultSection.remove(); searchResultSection = null; }
+        }
+
+        function clearSearch() {
+            searchInput.value = '';
+            acBox.style.display = 'none';
+            acSelected = -1;
+            clearDebounce();
+            resetView();
+            searchInput.focus();
+        }
+
+        function filterColleges() {} // legacy no-op (kept for inline oninput compatibility)
+
+        } // end if (searchInput)
+
+        // ── Salary Chart ────────────────────────────────────────────
+        const careersData = {{ careers | tojson }};
+
+        function parseSalary(raw) {
+            // ₹X-Y LPA
+            let m = raw.match(/₹(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*LPA/);
+            if (m) return { min: +m[1], max: +m[2], unit: 'LPA' };
+
+            // $Xk / ₹Y LPA  — use ₹ value, estimate range ±15%
+            m = raw.match(/\/\s*₹(\d+(?:\.\d+)?)\s*LPA/);
+            if (m) { const v = +m[1]; return { min: Math.round(v * 0.75), max: v, unit: 'LPA' }; }
+
+            // standalone ₹Y LPA
+            m = raw.match(/₹(\d+(?:\.\d+)?)\s*LPA/);
+            if (m) { const v = +m[1]; return { min: Math.round(v * 0.8), max: v, unit: 'LPA' }; }
+
+            // $Xk (no ₹ equivalent) — treat as $k
+            m = raw.match(/\$(\d+(?:\.\d+)?)k/i);
+            if (m) { const v = +m[1]; return { min: Math.round(v * 0.75), max: v, unit: '$k' }; }
+
+            return null;
+        }
+
+        function buildChart() {
+            const ctx = document.getElementById('salaryChart');
+            if (!ctx) return;
+
+            const parsed = careersData.map(c => ({ title: c.title, salary: c.salary, p: parseSalary(c.salary), outlook: c.outlook }));
+            const chartable = parsed.filter(c => c.p !== null);
+
+            if (chartable.length === 0) { ctx.closest('.chart-panel').style.display = 'none'; return; }
+
+            // Determine unit label
+            const units = [...new Set(chartable.map(c => c.p.unit))];
+            const unitLabel = units.includes('LPA') ? '₹ Lakhs Per Annum (LPA)' : units[0];
+
+            const outlookColors = {
+                'Exponential': '#34d399',
+                'High':        '#a78bfa',
+                'Steady':      '#38bdf8',
+                'Emerging':    '#fbbf24'
+            };
+
+            const labels = chartable.map(c => c.title);
+            const minData = chartable.map(c => c.p.min);
+            const maxData = chartable.map(c => c.p.max);
+            const bgColors = chartable.map(c => (outlookColors[c.outlook] || '#6c63ff') + '33');
+            const borderColors = chartable.map(c => outlookColors[c.outlook] || '#6c63ff');
+
+            const chartHeight = Math.max(320, chartable.length * 38);
+            ctx.parentElement.style.height = chartHeight + 'px';
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Min',
+                            data: minData,
+                            backgroundColor: bgColors,
+                            borderColor: borderColors,
+                            borderWidth: 0,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            barPercentage: 0.55,
+                            categoryPercentage: 0.85
+                        },
+                        {
+                            label: 'Range',
+                            data: chartable.map((c, i) => c.p.max - c.p.min),
+                            backgroundColor: borderColors.map(c => c + 'cc'),
+                            borderColor: borderColors,
+                            borderWidth: 0,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            barPercentage: 0.55,
+                            categoryPercentage: 0.85
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0e1018',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            titleColor: '#f0f2ff',
+                            bodyColor: '#8891b4',
+                            padding: 12,
+                            cornerRadius: 10,
+                            callbacks: {
+                                title: (items) => chartable[items[0].dataIndex].title,
+                                label: (item) => {
+                                    const c = chartable[item.dataIndex];
+                                    return `  ${c.salary}`;
+                                },
+                                afterLabel: (item) => {
+                                    const c = chartable[item.dataIndex];
+                                    return `  Outlook: ${c.outlook}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                            ticks: { color: '#545b7a', font: { size: 11 }, callback: v => v + (units.includes('LPA') ? ' LPA' : 'k') },
+                            title: { display: true, text: unitLabel, color: '#545b7a', font: { size: 11 } },
+                            border: { display: false }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: { color: '#8891b4', font: { size: 12 }, padding: 8 },
+                            border: { display: false }
+                        }
+                    },
+                    onClick: (evt, elements) => {
+                        if (!elements.length) return;
+                        const idx = elements[0].index;
+                        const originalIdx = careersData.findIndex(c => c.title === chartable[idx].title);
+                        const card = document.querySelector(`.career-card[data-career-idx="${originalIdx}"]`);
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            card.classList.add('chart-highlight');
+                            setTimeout(() => card.classList.remove('chart-highlight'), 1800);
+                        }
+                    },
+                    onHover: (evt, elements) => {
+                        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            buildChart();
+        });
+
+        document.querySelectorAll('.college-card, .career-card').forEach((card, i) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 80 + i * 40);
+        });
+
+        // ── Detail Modal ─────────────────────────────────────────────
+        const detailOverlay = document.getElementById('detailOverlay');
+        const detailModal   = document.getElementById('detailModal');
+        const detailBody    = document.getElementById('detailBody');
+
+        function openDetailModal(el, type) {
+            if (type === 'college') {
+                const name     = el.dataset.name     || '';
+                const rank     = el.dataset.rank     || '';
+                const fees     = el.dataset.fees     || '';
+                const features = el.dataset.features || '';
+                const location = el.dataset.location || '';
+                const region   = el.dataset.region   || '';
+                const exams    = el.dataset.exams    || '';
+                const isIndia  = region === 'India';
+
+                const featureBullets = features.split(/[,;]/).map(f => f.trim()).filter(Boolean)
+                    .map(f => `<li class="detail-feature-item">${f}</li>`).join('');
+
+                const examBadges = exams
+                    ? exams.split(',').map(e => e.trim()).filter(Boolean)
+                        .map(e => `<span class="exam-badge">${e}</span>`).join('')
+                    : '<span class="exam-badge exam-badge-none">Not specified</span>';
+
+                detailBody.innerHTML = `
+                    <div class="detail-type-badge ${isIndia ? 'india' : 'global'}">
+                        ${isIndia ? '🇮🇳 Indian Institution' : '🌐 International Institution'}
+                    </div>
+                    <h2 class="detail-title">${name}</h2>
+                    <div class="detail-location">📍 ${location}</div>
+
+                    <div class="detail-stats-row">
+                        <div class="detail-stat">
+                            <div class="detail-stat-label">Ranking / Tier</div>
+                            <div class="detail-stat-value rank">${rank}</div>
+                        </div>
+                        <div class="detail-stat">
+                            <div class="detail-stat-label">Estimated Fees</div>
+                            <div class="detail-stat-value fee">💰 ${fees}</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">📝 Entrance Exams to Crack</div>
+                        <div class="exam-badges-wrap">${examBadges}</div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">✨ Key Highlights</div>
+                        <ul class="detail-feature-list">${featureBullets}</ul>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">🎯 What to Expect</div>
+                        <p class="detail-expect-text">
+                            ${isIndia
+                                ? 'Strong academic reputation within India. Ideal for students seeking quality education close to home with industry connections and placement support.'
+                                : 'World-class global exposure with diverse student community and international career opportunities. Often requires strong academic profile and language proficiency.'}
+                        </p>
+                    </div>
+                `;
+            } else {
+                const title    = el.dataset.title    || '';
+                const salary   = el.dataset.salary   || '';
+                const outlook  = el.dataset.outlook  || '';
+                const duties   = el.dataset.duties   || '';
+                const region   = el.dataset.regionType || '';
+                const isGlobal = region === 'Global';
+                const outlookClass = outlook.toLowerCase();
+
+                const dutyBullets = duties.split(/[.;]/).map(d => d.trim()).filter(d => d.length > 4)
+                    .map(d => `<li class="detail-feature-item">${d}.</li>`).join('');
+
+                const outlookIcons = { 'excellent': '🚀', 'high': '📈', 'good': '✅', 'moderate': '⚖️', 'steady': '📊' };
+                const outlookIcon  = outlookIcons[outlookClass] || '💼';
+
+                detailBody.innerHTML = `
+                    <div class="detail-type-badge ${isGlobal ? 'global' : 'india'}">
+                        ${isGlobal ? '🌍 International Career' : '🇮🇳 Career in India'}
+                    </div>
+                    <h2 class="detail-title">${title}</h2>
+
+                    <div class="detail-stats-row">
+                        <div class="detail-stat">
+                            <div class="detail-stat-label">Salary Range</div>
+                            <div class="detail-stat-value fee">💵 ${salary}</div>
+                        </div>
+                        <div class="detail-stat">
+                            <div class="detail-stat-label">Job Outlook</div>
+                            <div class="detail-stat-value">
+                                <span class="outlook-badge ${outlookClass}" style="font-size:13px;padding:4px 12px">
+                                    ${outlookIcon} ${outlook}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">📋 Roles &amp; Responsibilities</div>
+                        <ul class="detail-feature-list">${dutyBullets}</ul>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="detail-section-title">💡 Career Insight</div>
+                        <p class="detail-expect-text">
+                            ${isGlobal
+                                ? 'This role is in strong demand globally. Consider building international certifications, language skills, and a portfolio of global projects to stand out.'
+                                : 'This role offers excellent opportunities in India\'s growing economy. Focus on relevant certifications, internships, and networking to fast-track your career.'}
+                        </p>
+                    </div>
+                `;
+            }
+
+            detailOverlay.classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        function closeDetailModal(e) {
+            if (e && e.target !== detailOverlay) return;
+            detailOverlay.classList.remove('active');
+            document.body.classList.remove('modal-open');
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                detailOverlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            }
+        });
+
+        function downloadReport() {
+            document.getElementById('printName').textContent = '{{ client_name }}';
+            document.getElementById('printEmail').textContent = '{{ session.get("client_email", "") }}';
+            document.getElementById('printDate').textContent = new Date().toLocaleDateString('en-IN', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            });
+
+            const allTabContents = document.querySelectorAll('.tab-content');
+            allTabContents.forEach(tc => tc.style.setProperty('display', 'block', 'important'));
+
+            window.print();
+
+            setTimeout(() => {
+                allTabContents.forEach(tc => tc.style.removeProperty('display'));
+                const active = document.querySelector('.tab-content.active');
+                if (active) active.style.display = 'block';
+            }, 500);
+        }
+    </script>
+</body>
+</html>
